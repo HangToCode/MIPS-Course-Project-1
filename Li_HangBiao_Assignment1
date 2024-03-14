@@ -1,0 +1,233 @@
+##############################################################################
+# Program name: User input math summary
+# Programmer: Li Hang Biao
+# Submission Date: 10/17/2022
+##############################################################################
+# Overall Program Functional Description:
+# Give a mathamatical summary base on user input
+##############################################################################
+# Register Usage in Main:
+# $t0 stores user input on how many integers
+# $t1 uses as a counter in a loop
+# $t2 stores the largest number
+# $t3 stores the lowest number
+# $t4 stores the total
+# $f3 stores the average
+# $t6 how many negative
+# $t7 how many zero
+# $s0 how many positive
+# $t8 store remainder
+# $t9 store quoitent
+##############################################################################
+
+.data
+	prompt: 	.asciiz "\nEnter how many integer: "
+	inputPrompt: 	.asciiz "\nEnter your integer: "
+	promptNext: 	.asciiz "\nEnter your next integer: "
+	max: 		.asciiz "\nMax: "
+	min: 		.asciiz "\nMin: "
+	total:		.asciiz "Total: "
+	avg: 		.asciiz "\nAverage: "
+	positive: 	.asciiz "\nPositice counter: "
+	negative: 	.asciiz "\nNegative counter: "
+	zero:		.asciiz "\nZero Counter: "
+	dZero: 		.double 0.0
+	s: 		.asciiz "/"
+	ad:		.asciiz "+"
+	
+.text 
+
+	main:
+	
+	ldc1 $f10, dZero
+	
+	#Ask user for how many integers
+	li $v0, 4
+	la $a0, prompt
+	syscall 
+	li $v0, 5
+	syscall 
+	
+	#store input to t0
+	move $t0, $v0
+	
+	li $t1, 0 #counter
+	li $t4, 0 #total
+	li $t6, 0 #negative counter
+	li $t7, 0 #zero counter
+	li $s0, 0 #positive counter
+	
+	
+	#loop to promt useer
+	while: beq $t1, $t0, exit
+	
+	#promt user
+	li $v0, 4
+	la $a0, promptNext
+	syscall 
+	li $v0, 5
+	syscall 
+	
+	beqz $t1, baseInfo #set the first number input as the max and min
+	backST: # jump back after finish setting
+	
+	add $t4, $t4, $v0
+	blt $t2, $v0, bigger
+	bgt $t3, $v0, smaller
+	back: #jump back after check the first two
+	
+	beqz $v0 checkZ
+	backZ: #jump back after checking if it 0
+	
+	bgtz $v0, positiveZ
+	bltz  $v0, negativeZ
+	backS: #jump back after checking if it negative or positive
+	
+	
+	addi $t1, $t1, 1
+	j while #loop
+	
+	exit: #exit out the progran
+	
+	
+	#shows result
+	li $v0, 4
+	la $a0, total
+	syscall 
+	
+	#Total
+	li $v0, 1
+	move $a0, $t4
+	syscall 
+	
+	#average
+	div $t4, $t0
+	mfhi $t8 #store remainder
+	mflo $t9 #store quoitent
+	
+	bnez $t8, printMixFraction #if the remainder is not a 0 then go and print both the quoient and the double
+	
+	li $v0, 4
+	la $a0, avg #print average prompt
+	syscall 
+	
+	li $v0, 1 #tell the system to get ready to print a whole number
+	div $a0, $t4, $t0 #this would divide for the whole number
+	syscall 
+		
+	backAve: #jump back after finishing the average
+	
+	#largest
+	li $v0, 4
+	la $a0, max
+	syscall 
+	
+	li $v0, 1
+	move $a0, $t2
+	syscall 
+	
+	#smallest
+	li $v0, 4
+	la $a0, min
+	syscall 
+	
+	li $v0, 1
+	move $a0, $t3
+	syscall 
+	
+	#positive
+	li $v0, 4
+	la $a0, positive
+	syscall 
+	
+	li $v0, 1
+	move $a0, $s0
+	syscall
+	
+	#smallest
+	li $v0, 4
+	la $a0, negative
+	syscall 
+	
+	li $v0, 1
+	move $a0, $t6
+	syscall
+	
+	#zero
+	li $v0, 4
+	la $a0, zero
+	syscall 
+	
+	li $v0, 1
+	move $a0, $t7
+	syscall
+
+	li $v0, 10 # End program
+	syscall 
+
+	#max function
+	bigger: add $t2, $v0, $zero
+	j back
+	
+	#max function
+        smaller: add $t3, $v0, $zero
+        j back
+        
+        #zero add
+        checkZ: addi $t7, $t7, 1
+        j backZ
+        
+        #positive add
+        positiveZ: addi $s0, $s0, 1
+        j backS
+        
+        #negative add
+        negativeZ: addi $t6, $t6, 1
+        j backS
+        
+        #base info for start
+        baseInfo:
+        move $t2, $v0 #set max to the first number
+        move $t3, $v0 #set min to the first number
+        j backST #jump back to the start
+        
+        #print the mix fraction
+        printMixFraction:
+        # $t8 store remainder
+	li $v0, 4
+	la $a0, avg #print average prompt
+	syscall 
+	
+	li $v0, 1
+	div $a0, $t4, $t0
+	syscall 
+	
+	li $v0,4
+	la $a0, ad #print +
+	syscall 
+	
+	move $t9, $t4
+	
+	WhileM: bgt $t1, $t8, endM
+	sub $t8, $t8, $t1
+	
+	j WhileM
+	
+	endM:
+	
+	li $v0, 1
+	move $a0, $t8
+	syscall 
+	
+	li $v0, 4
+	la $a0, s #print /
+	syscall 
+	
+	li $v0, 1
+	move $a0, $t1
+	syscall 
+        
+        j backAve #jump back to average
+        
+        
+        
